@@ -61,7 +61,38 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+st.markdown("""
+<style>
 
+/* 🔥 FIX LABEL COLORS */
+label, .stMarkdown, .stTextInput label, .stNumberInput label, 
+.stSelectbox label, .stMultiSelect label, .stRadio label {
+    color: white !important;
+    font-weight: 500;
+}
+
+/* Input text color */
+input, textarea {
+    color: white !important;
+}
+
+/* Dropdown text */
+div[data-baseweb="select"] {
+    color: black !important;
+}
+
+/* Placeholder text */
+::placeholder {
+    color: #ccc !important;
+}
+
+/* Headings */
+h1, h2, h3, h4 {
+    color: white !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
 # ================= DATABASE =================
 conn = sqlite3.connect("../users.db", check_same_thread=False)
 c = conn.cursor()
