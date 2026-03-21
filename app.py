@@ -224,8 +224,8 @@ elif choice == "Login":
 
 # ================= HOME =================
 if st.session_state.user:
-    st.subheader(f"🏠 Welcome, {st.session_state.user}")
 
+    st.subheader(f"🏠 Welcome, {st.session_state.user}")
     st.markdown("### Enter Your Details")
 
     col1, col2, col3 = st.columns(3)
@@ -239,87 +239,123 @@ if st.session_state.user:
     with col3:
         gender = st.selectbox("Gender", ["Male", "Female"])
 
+    # ================= USER INPUT =================
     diseases = st.multiselect(
         "Select Diseases",
-        ["None", "Diabetes", "Heart Disease", "BP", "Obesity"]
+        [
+            "None", "Diabetes", "Hypertension", "Heart Disease",
+            "Obesity", "Thyroid", "PCOS", "Anemia",
+            "Kidney Disease", "Liver Disease", "Asthma",
+            "Arthritis", "Cholesterol", "Depression",
+            "Vitamin Deficiency", "Digestive Issues",
+            "Allergy", "Migraine"
+        ]
     )
+
+    if "None" in diseases:
+        diseases = []
 
     activity = st.selectbox("Activity Level", ["Low", "Moderate", "High"])
 
     include_foods = st.text_input("Foods to include (optional)")
     exclude_foods = st.text_input("Foods to avoid (optional)")
 
-    action = st.radio("Plan Type", ["Normal", "Personalized"])
+    action = st.radio("Plan Type", ["Normal", "Personalized", "Premium"])
 
     if st.button("Get Diet Plan"):
-        try:
-            personalized = "yes" if action == "Personalized" else None
 
-            diet, guide = predict_diet(
-                age, bmi, diseases, activity, gender,
-                personalized, include_foods, exclude_foods
-            )
+        if action == "Personalized":
+            personalized = "yes"
+        elif action == "Premium":
+            personalized = "premium"
+        else:
+            personalized = None
 
-            st.success("✅ Diet Plan Generated")
+        diet, guide = predict_diet(
+            age, bmi, diseases, activity, gender,
+            personalized, include_foods, exclude_foods
+        )
 
-            # Diet
+        st.success("✅ Diet Plan Generated")
+
+        # -------- DIET --------
+        st.markdown(f"""
+        <div class="card">
+            <h3>🍽️ Recommended Diet</h3>
+            <p><b>{diet}</b></p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # -------- METRICS --------
+        col1, col2, col3, col4 = st.columns(4)
+
+        col1.markdown(f"<div class='metric-card'><div class='metric-title'>Calories</div><div class='metric-value'>{guide['calories']}</div></div>", unsafe_allow_html=True)
+        col2.markdown(f"<div class='metric-card'><div class='metric-title'>Protein</div><div class='metric-value'>{guide['protein']}</div></div>", unsafe_allow_html=True)
+        col3.markdown(f"<div class='metric-card'><div class='metric-title'>Carbs</div><div class='metric-value'>{guide['carbohydrates']}</div></div>", unsafe_allow_html=True)
+        col4.markdown(f"<div class='metric-card'><div class='metric-title'>Fat</div><div class='metric-value'>{guide['fat']}</div></div>", unsafe_allow_html=True)
+
+        # -------- FOODS --------
+        st.markdown(f"""
+        <div class="card">
+            <h3>🥦 Recommended Foods</h3>
+            <p>{", ".join(guide["recommended_foods"])}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown(f"""
+        <div class="card">
+            <h3>🚫 Foods to Avoid</h3>
+            <p>{", ".join(guide["foods_to_avoid"])}</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # -------- WEEKLY --------
+        if "weekly_plan" in guide:
+            weekly_html = ""
+            for day, meal in guide["weekly_plan"].items():
+                weekly_html += f"<p><b>{day}:</b> {meal}</p>"
+
             st.markdown(f"""
             <div class="card">
-                <h3>🍽️ Recommended Diet</h3>
-                <p><b>{diet}</b></p>
+                <h3>📅 Weekly Plan</h3>
+                {weekly_html}
             </div>
             """, unsafe_allow_html=True)
 
-            # Metrics
-            col1, col2, col3, col4 = st.columns(4)
+        # -------- PREMIUM --------
+        if "meal_plan" in guide:
+            meal_html = ""
+            for day, meals in guide["meal_plan"].items():
+                meal_html += f"<p><b>{day}</b><br>"
+                meal_html += f"🍳 Breakfast: {meals['Breakfast']}<br>"
+                meal_html += f"🍛 Lunch: {meals['Lunch']}<br>"
+                meal_html += f"🌙 Dinner: {meals['Dinner']}</p>"
 
-            col1.markdown(f"<div class='metric-card'><div class='metric-title'>Calories</div><div class='metric-value'>{guide['calories']}</div></div>", unsafe_allow_html=True)
-            col2.markdown(f"<div class='metric-card'><div class='metric-title'>Protein</div><div class='metric-value'>{guide['protein']}</div></div>", unsafe_allow_html=True)
-            col3.markdown(f"<div class='metric-card'><div class='metric-title'>Carbs</div><div class='metric-value'>{guide['carbohydrates']}</div></div>", unsafe_allow_html=True)
-            col4.markdown(f"<div class='metric-card'><div class='metric-title'>Fat</div><div class='metric-value'>{guide['fat']}</div></div>", unsafe_allow_html=True)
-
-            # Recommended Foods
             st.markdown(f"""
             <div class="card">
-                <h3>🥦 Recommended Foods</h3>
-                <p>{", ".join(guide["recommended_foods"])}</p>
+                <h3>🍽️ Meal-to-Meal Plan</h3>
+                {meal_html}
             </div>
             """, unsafe_allow_html=True)
 
-            # Avoid Foods
+        # -------- EXERCISE --------
+        if "exercise_plan" in guide:
             st.markdown(f"""
             <div class="card">
-                <h3>🚫 Foods to Avoid</h3>
-                <p>{", ".join(guide["foods_to_avoid"])}</p>
+                <h3>🏋️ Exercise Plan</h3>
+                <p>{", ".join(guide["exercise_plan"])}</p>
             </div>
             """, unsafe_allow_html=True)
 
-            # Weekly Plan
-            if "weekly_plan" in guide:
-                weekly_html = ""
-                for day, meal in guide["weekly_plan"].items():
-                    weekly_html += f"<p><b>{day}:</b> {meal}</p>"
+        # -------- NOTE --------
+        if "note" in guide:
+            st.markdown(f"""
+            <div class="card">
+                <h3>🤖 AI Note</h3>
+                <p>{guide["note"]}</p>
+            </div>
+            """, unsafe_allow_html=True)
 
-                st.markdown(f"""
-                <div class="card">
-                    <h3>📅 Weekly Meal Plan</h3>
-                    {weekly_html}
-                </div>
-                """, unsafe_allow_html=True)
-
-            # Note
-            if "note" in guide:
-                st.markdown(f"""
-                <div class="card">
-                    <h3>🤖 AI Note</h3>
-                    <p>{guide["note"]}</p>
-                </div>
-                """, unsafe_allow_html=True)
-
-        except Exception as e:
-            st.error(f"Error: {e}")
-
-    # Logout
     if st.button("Logout"):
         st.session_state.user = None
         st.rerun()
